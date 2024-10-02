@@ -52,8 +52,21 @@ jobs:
 
     - name: Sign APK
       run: |
-        /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks /tmp/keystore.jks --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} --out app/build/outputs/apk/release/app-root-release-signed.apk app/build/outputs/apk/root/release/*.apk
-        /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks /tmp/keystore.jks --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} --out app/build/outputs/apk/release/app-nonRoot-release-signed.apk app/build/outputs/apk/nonRoot/release/*.apk
+        /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign \
+        --ks /tmp/keystore.jks \
+        --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} \
+        --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+        --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
+        --out app/build/outputs/apk/release/app-root-release-signed.apk \
+        app/build/outputs/apk/root/release/*.apk
+
+        /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign \
+        --ks /tmp/keystore.jks \
+        --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} \
+        --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+        --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
+        --out app/build/outputs/apk/release/app-nonRoot-release-signed.apk \
+        app/build/outputs/apk/nonRoot/release/*.apk
 
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v4
