@@ -44,29 +44,22 @@ jobs:
     - name: Clean project
       run: ./gradlew clean
 
-    - name: Build Android project
-      run: ./gradlew assembleRelease
-
     - name: Decode and save keystore
       run: echo "$ANDROID_KEYSTORE" | base64 --decode > /tmp/keystore.jks
 
-    - name: Sign APK
-      run: |
-        /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign \
-        --ks /tmp/keystore.jks \
-        --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} \
-        --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-        --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
-        --out app/build/outputs/apk/release/app-root-release-signed.apk \
-        app/build/outputs/apk/root/release/*.apk
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
-        /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign \
-        --ks /tmp/keystore.jks \
-        --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} \
-        --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-        --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
-        --out app/build/outputs/apk/release/app-nonRoot-release-signed.apk \
-        app/build/outputs/apk/nonRoot/release/*.apk
+    - name: Build app using Gradle
+      run: ./gradlew assembleRelease
+
+    - name: Sign the APK
+      run: ./gradlew assembleRelease -Psigning.storeFile=/tmp/keystore.jks -Psigning.storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} -Psigning.keyAlias=${{ secrets.ANDROID_KEY_ALIAS }} -Psigning.keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
 
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v4
