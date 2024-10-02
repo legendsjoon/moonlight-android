@@ -45,7 +45,7 @@ jobs:
       run: ./gradlew clean
 
     - name: Decode and save keystore
-      run: echo "$ANDROID_KEYSTORE" | base64 --decode > /tmp/joon.jks
+      run: echo "$ANDROID_KEYSTORE" | base64 --decode > joon.jks
 
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
@@ -57,9 +57,10 @@ jobs:
 
     - name: Build app using Gradle
       run: ./gradlew assembleRelease
-
-    - name: Sign the APK
-      run: ./gradlew assembleRelease -Pandroid.injected.signing.storeFile=joon.jks -Pandroid.injected.signing.storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.keyAlias=${{ secrets.ANDROID_KEY_ALIAS }} -Pandroid.injected.signing.keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+      env:
+        ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     - name: Upload root APK as artifact
       uses: actions/upload-artifact@v4
