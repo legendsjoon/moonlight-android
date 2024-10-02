@@ -45,15 +45,7 @@ jobs:
       run: ./gradlew clean
 
     - name: Decode and save keystore
-      run: echo "$ANDROID_KEYSTORE" | base64 --decode > /home/runner/work/moonlight-android/moonlight-android/app/joon.jks
-
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
+      run: echo "$ANDROID_KEYSTORE" | base64 --decode > /home/runner/work/moonlight-android/moonlight-android/app/joon.keystore
 
     - name: Build app using Gradle
       run: ./gradlew assembleRelease
