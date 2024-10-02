@@ -45,7 +45,7 @@ jobs:
       run: ./gradlew clean
 
     - name: Decode and save keystore
-      run: echo "$ANDROID_KEYSTORE" | base64 --decode > /tmp/keystore.jks
+      run: echo "$ANDROID_KEYSTORE" | base64 --decode > /tmp/joon.jks
 
     - name: Cache Gradle dependencies
       uses: actions/cache@v3
@@ -59,9 +59,16 @@ jobs:
       run: ./gradlew assembleRelease
 
     - name: Sign the APK
-      run: ./gradlew assembleRelease -Psigning.storeFile=/tmp/keystore.jks -Psigning.storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} -Psigning.keyAlias=${{ secrets.ANDROID_KEY_ALIAS }} -Psigning.keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+      run: ./gradlew assembleRelease -Pandroid.injected.signing.storeFile=joon.jks -Pandroid.injected.signing.storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.keyAlias=${{ secrets.ANDROID_KEY_ALIAS }} -Pandroid.injected.signing.keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
 
-    - name: Upload APK as artifact
+    - name: Upload root APK as artifact
       uses: actions/upload-artifact@v4
       with:
-        path: app/build/outputs/apk/**/*.apk
+        name: root
+        path: app/build/outputs/apk/root/release/.apk
+
+    - name: Upload nonRoot APK as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: root
+        path: app/build/outputs/apk/nonRoot/release/.apk
