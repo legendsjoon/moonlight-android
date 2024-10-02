@@ -4,10 +4,12 @@ package com.limelight;
 import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.audio.AndroidAudioRenderer;
 import com.limelight.binding.input.ControllerHandler;
+import com.limelight.binding.input.GameInputDevice;
 import com.limelight.binding.input.KeyboardTranslator;
 import com.limelight.binding.input.capture.InputCaptureManager;
 import com.limelight.binding.input.capture.InputCaptureProvider;
 import com.limelight.binding.input.touch.AbsoluteTouchContext;
+import com.limelight.binding.input.touch.NativeTouchContext;
 import com.limelight.binding.input.touch.RelativeTouchContext;
 import com.limelight.binding.input.driver.UsbDriverService;
 import com.limelight.binding.input.evdev.EvdevListener;
@@ -23,7 +25,7 @@ import com.limelight.nvstream.StreamConfiguration;
 import com.limelight.nvstream.http.ComputerDetails;
 import com.limelight.nvstream.http.NvApp;
 import com.limelight.nvstream.http.NvHTTP;
-import com.limelight.nvstream.input.ControllerPacket;
+//import com.limelight.nvstream.input.ControllerPacket;
 import com.limelight.nvstream.input.KeyboardPacket;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
@@ -85,8 +87,10 @@ import java.lang.reflect.Method;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Locale;
-
+import java.util.Objects;
 
 public class Game extends Activity implements SurfaceHolder.Callback,
         OnGenericMotionListener, OnTouchListener, NvConnectionListener, EvdevListener,
@@ -96,7 +100,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     // Only 2 touches are supported
     private final TouchContext[] touchContextMap = new TouchContext[2];
-    private long threeFingerDownTime = 0;
+    private long multiFingerDownTime = 0;
 
     private static final int REFERENCE_HORIZ_RES = 1280;
     private static final int REFERENCE_VERT_RES = 720;
@@ -107,7 +111,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private static final int STYLUS_UP_DEAD_ZONE_DELAY = 150;
     private static final int STYLUS_UP_DEAD_ZONE_RADIUS = 50;
 
-    private static final int THREE_FINGER_TAP_THRESHOLD = 300;
+    private static final int MULTI_FINGER_TAP_THRESHOLD = 300;
 
     private ControllerHandler controllerHandler;
     private KeyboardTranslator keyboardTranslator;
@@ -146,12 +150,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private TextView notificationOverlayView;
     private int requestedNotificationOverlayVisibility = View.GONE;
     private TextView performanceOverlayView;
+    private int requestedPerformanceOverlayVisibility = View.GONE;
 
     private MediaCodecDecoderRenderer decoderRenderer;
     private boolean reportedCrash;
 
     private WifiManager.WifiLock highPerfWifiLock;
     private WifiManager.WifiLock lowLatencyWifiLock;
+    private Map<Integer, NativeTouchContext.Pointer> nativeTouchPointerMap = new HashMap<>();
 
     private boolean connectedToUsbDriverService = false;
     private ServiceConnection usbDriverServiceConnection = new ServiceConnection() {
@@ -218,6 +224,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // Read the stream preferences
         prefConfig = PreferenceConfiguration.readPreferences(this);
         tombstonePrefs = Game.this.getSharedPreferences("DecoderTombstone", 0);
+
+        // Set flat region size for long press jitter elimination.
+        NativeTouchContext.INTIAL_ZONE_PIXELS = prefConfig.longPressflatRegionPixels;
+        NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch;
+        if(prefConfig.enhancedTouchOnWhichSide){
+            NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = -1;
+        }else{
+            NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = 1;
+        }
+        NativeTouchContext.ENHANCED_TOUCH_ZONE_DIVIDER = prefConfig.enhanceTouchZoneDivider * 0.01f;
+        NativeTouchContext.POINTER_VELOCITY_FACTOR = prefConfig.pointerVelocityFactor * 0.01f;
+        // NativeTouchContext.POINTER_FIXED_X_VELOCITY = prefConfig.pointerFixedXVelocity;
 
         // Enter landscape unless we're on a square screen
         setPreferredOrientationForCurrentDisplay();
@@ -369,9 +387,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         // Check if the user has enabled performance stats overlay
-        if (prefConfig.enablePerfOverlay) {
-            performanceOverlayView.setVisibility(View.VISIBLE);
-        }
+        //if (prefConfig.enablePerfOverlay) {
+        //    performanceOverlayView.setVisibility(View.VISIBLE);
+        //}
 
         decoderRenderer = new MediaCodecDecoderRenderer(
                 this,
@@ -613,9 +631,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     virtualController.show();
                 }
 
-                if (prefConfig.enablePerfOverlay) {
-                    performanceOverlayView.setVisibility(View.VISIBLE);
-                }
+                performanceOverlayView.setVisibility(requestedPerformanceOverlayVisibility);
 
                 notificationOverlayView.setVisibility(requestedNotificationOverlayVisibility);
 
@@ -1527,8 +1543,25 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private float[] getStreamViewRelativeNormalizedXY(View view, MotionEvent event, int pointerIndex) {
-        float normalizedX = event.getX(pointerIndex);
-        float normalizedY = event.getY(pointerIndex);
+        float normalizedX;
+        float normalizedY;
+        if(prefConfig.enableEnhancedTouch){
+            // Coords are replaced by NativeTouchContext here.
+            NativeTouchContext.Pointer pointer = nativeTouchPointerMap.get(event.getPointerId(pointerIndex));
+            if(pointer != null) {
+                float targetCoords[] = pointer.XYCoordSelector(); // decides to passthrough or manipulate coords.
+                normalizedX = targetCoords[0];
+                normalizedY = targetCoords[1];
+            }
+            else{
+                normalizedX = 0f; //in this case (pointer == null), pointers are already all up.
+                normalizedY = 0f;
+            }
+        }
+        else{
+            normalizedX = event.getX(pointerIndex);
+            normalizedY = event.getY(pointerIndex);
+        }
 
         // For the containing background view, we must subtract the origin
         // of the StreamView to get video-relative coordinates.
@@ -1742,9 +1775,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
             // Move events may impact all active pointers
-            for (int i = 0; i < event.getPointerCount(); i++) {
-                if (!sendTouchEventForPointer(view, event, eventType, i)) {
-                    return false;
+            if(prefConfig.enableEnhancedTouch) {
+                for (int i = 0; i < event.getPointerCount(); i++) {
+                    Objects.requireNonNull(nativeTouchPointerMap.get(event.getPointerId(i))).updatePointerCoords(event, i); // update pointer coords in the map.
+                    if (!sendTouchEventForPointer(view, event, eventType, i)) {
+                        return false;
+                    }
+                }
+            }
+            else{
+                for (int i = 0; i < event.getPointerCount(); i++) {
+                    if (!sendTouchEventForPointer(view, event, eventType, i)) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -1756,8 +1799,41 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     MoonBridge.LI_ROT_UNKNOWN) != MoonBridge.LI_ERR_UNSUPPORTED;
         }
         else {
+            switch(event.getActionMasked()) {
+                case MotionEvent.ACTION_POINTER_DOWN:
+                multiFingerTapChecker(event);
+                case MotionEvent.ACTION_DOWN: // first & following finger down.
+                    if(prefConfig.enableEnhancedTouch) {
+                        NativeTouchContext.Pointer pointer = new NativeTouchContext.Pointer(event); //create a Pointer Instance for new touch pointer, put it into the map.
+                        nativeTouchPointerMap.put(pointer.getPointerId(), pointer);
+                    }
+                    break;
+                case MotionEvent.ACTION_UP: // all fingers up
+                    // toggle keyboard when all fingers lift up, just like how it works in trackpad mode.
+                    if(event.getEventTime() - multiFingerDownTime < MULTI_FINGER_TAP_THRESHOLD) {
+                        toggleKeyboard();
+                    }
+                case MotionEvent.ACTION_POINTER_UP:
+                    if(prefConfig.enableEnhancedTouch) {
+                        nativeTouchPointerMap.remove(event.getPointerId(event.getActionIndex()));
+                    }
+                    break;
+            }
             // Up, Down, and Hover events are specific to the action index
             return sendTouchEventForPointer(view, event, eventType, event.getActionIndex());
+        }
+    }
+
+    private void multiFingerTapChecker (MotionEvent event) {
+        if (event.getPointerCount() == prefConfig.nativeTouchFingersToToggleKeyboard) {
+            // number of fingers to tap is defined by prefConfig.nativeTouchFingersToToggleKeyboard, configurable from 3 to 10, and -1(disabled) in menu.
+
+            // Cancel the first and second touches to avoid
+            // erroneous events
+            // for (TouchContext aTouchContext : touchContextMap) {
+            //    aTouchContext.cancelTouch();
+            // }
+            multiFingerDownTime = event.getEventTime();
         }
     }
 
@@ -1974,6 +2050,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             // This case is for fingers
             else
             {
+                if (!prefConfig.touchscreenTrackpad && trySendTouchEvent(view, event)) {
+                    return true;
+                }
                 if (virtualController != null &&
                         (virtualController.getControllerMode() == VirtualController.ControllerMode.MoveButtons ||
                          virtualController.getControllerMode() == VirtualController.ControllerMode.ResizeButtons)) {
@@ -2002,7 +2081,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 if (event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN &&
                         event.getPointerCount() == 3) {
                     // Three fingers down
-                    threeFingerDownTime = event.getEventTime();
+                    multiFingerDownTime = event.getEventTime();
 
                     // Cancel the first and second touches to avoid
                     // erroneous events
@@ -2016,11 +2095,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 // TODO: Re-enable native touch when have a better solution for handling
                 // cancelled touches from Android gestures and 3 finger taps to activate
                 // the software keyboard.
-                /*if (!prefConfig.touchscreenTrackpad && trySendTouchEvent(view, event)) {
+                if (!prefConfig.touchscreenTrackpad && trySendTouchEvent(view, event)) {
                     // If this host supports touch events and absolute touch is enabled,
                     // send it directly as a touch event.
                     return true;
-                }*/
+                }
 
                 TouchContext context = getTouchContext(actionIndex);
                 if (context == null) {
@@ -2041,7 +2120,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     if (event.getPointerCount() == 1 &&
                             (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || (event.getFlags() & MotionEvent.FLAG_CANCELED) == 0)) {
                         // All fingers up
-                        if (event.getEventTime() - threeFingerDownTime < THREE_FINGER_TAP_THRESHOLD) {
+                        if (event.getEventTime() - multiFingerDownTime < MULTI_FINGER_TAP_THRESHOLD) {
                             // This is a 3 finger tap to bring up the keyboard
                             toggleKeyboard();
                             return true;
@@ -2184,7 +2263,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             // Tell the OS not to buffer input events for us
             //
             // NB: This is still needed even when we call the newer requestUnbufferedDispatch()!
-            view.requestUnbufferedDispatch(event);
+            // Add a configuration to allow view.requestUnbufferedDispatch to be disabled.
+            if(!prefConfig.syncTouchEventWithDisplay) {
+                view.requestUnbufferedDispatch(event);
+            }
         }
 
         return handleMotionEvent(view, event);
@@ -2647,6 +2729,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     @Override
+    public boolean isPerfOverlayVisible() {
+        return requestedPerformanceOverlayVisibility == View.VISIBLE;
+    }
+
+    @Override
     public void onUsbPermissionPromptStarting() {
         // Disable PiP auto-enter while the USB permission prompt is on-screen. This prevents
         // us from entering PiP while the user is interacting with the OS permission dialog.
@@ -2661,6 +2748,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     @Override
+    public void showGameMenu(GameInputDevice device) {
+        new GameMenu(this, conn, device);
+    }
+
+    @Override
     public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
         switch (keyEvent.getAction()) {
             case KeyEvent.ACTION_DOWN:
@@ -2672,5 +2764,28 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             default:
                 return false;
         }
+    }
+
+    public void disconnect() {
+        finish();
+    }
+    @Override
+    public void onBackPressed() {
+        // Instead of "closing" the game activity open the game menu. The user has to select
+        // "Disconnect" within the game menu to actually disconnect from the remote host.
+        //
+        // Use the onBackPressed instead of the onKey function, since the onKey function
+        // also captures events while having the on-screen keyboard open.  Using onBackPressed
+        // ensures that Android properly handles the back key when needed and only open the game
+        // menu when the activity would be closed.
+        showGameMenu(null);
+    }
+    public void togglePerformanceOverlay() {
+        if (requestedPerformanceOverlayVisibility == View.VISIBLE) {
+            requestedPerformanceOverlayVisibility = View.GONE;
+        } else {
+            requestedPerformanceOverlayVisibility = View.VISIBLE;
+        }
+        performanceOverlayView.setVisibility(requestedPerformanceOverlayVisibility);
     }
 }

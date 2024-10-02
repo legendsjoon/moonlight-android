@@ -134,6 +134,27 @@
     <string name="applist_quit_confirmation">Are you sure you want to quit the running app? All unsaved data will be lost.</string>
     <string name="applist_details_id">App ID:</string>
 
+    <!-- In Game menu -->
+    <string name="game_menu_toggle_keyboard">Toggle On-screen Keyboard</string>
+    <string name="game_menu_toggle_performance_overlay">Toggle Performance Overlay</string>
+    <string name="game_menu_toggle_mouse_on">Enable Controller Mouse Emulation</string>
+    <string name="game_menu_toggle_mouse_off">Disable Controller Mouse Emulation</string>
+    <string name="game_menu_disconnect">Disconnect</string>
+    <string name="game_menu_cancel">Cancel</string>
+    <string name="game_menu_send_keys">Send special Key(s)</string>
+    <string name="game_menu_send_keys_esc">Send ESC (Menu)</string>
+    <string name="game_menu_send_keys_f11">Send F11 (Toggle Full Screen)</string>
+    <string name="game_menu_send_keys_f11_alt">Send Alt + Enter (Toggle Full Screen)</string>
+    <string name="game_menu_send_keys_ctrl_v">Send CTRL + V (Paste Clipboard)</string>
+    <string name="game_menu_send_keys_win">Send WIN (Toggle Windows Start Menu)</string>
+    <string name="game_menu_send_keys_win_d">Send WIN + D (Switch to Desktop)</string>
+    <string name="game_menu_send_keys_win_g">Send WIN + G (Open Xbox Game Bar)</string>
+    <string name="game_menu_send_keys_shift_tab">Send SHIFT + TAB (Open Steam Overlay)</string>
+    <string name="game_menu_send_keys_insert">Send Insert (Toggle FPS Monitor)</string>
+    <string name="game_menu_send_move_window">Send WIN + SHIFT + RIGHT</string>
+    <string name="game_menu_send_P">Send P key</string>
+
+
     <!-- Add computer manually activity -->
     <string name="title_add_pc">Add PC Manually</string>
     <string name="msg_add_pc">Connecting to the PC…</string>
@@ -161,6 +182,8 @@
     <string name="resolution_prefix_native_portrait">(Portrait)</string>
     <string name="fps_suffix_fps">FPS</string>
     <string name="title_native_fps_dialog">Native FPS Warning</string>
+    <string name="title_custom_resolutions">Custom resolutions</string>
+    <string name="summary_custom_resolutions">Create your own custom resolutions</string>
 
     <string name="category_audio_settings">Audio Settings</string>
     <string name="title_audio_config_list">Surround sound configuration</string>
@@ -196,11 +219,43 @@
 
     <string name="category_input_settings">Input Settings</string>
     <string name="title_checkbox_touchscreen_trackpad">Use the touchscreen as a trackpad</string>
-    <string name="summary_checkbox_touchscreen_trackpad">If enabled, the touchscreen acts like a trackpad. If disabled, the touchscreen directly controls the mouse cursor.</string>
+    <string name="summary_checkbox_touchscreen_trackpad">If enabled, the touchscreen acts like a trackpad. If disabled, multi-point touch will be enabled.</string>
+
+    <string name="title_checkbox_sync_touch_event_with_display">Synchronize touch event with display refresh </string>
+    <string name="summary_checkbox_sync_touch_event_with_display">If enabled, touch event will be synchronized with display refresh rate, like 60Hz.</string>
+
+    <string name="title_seekbar_long_press_flat_region">Flat region for long press jitter elimination in multi-point touch mode</string>
+    <string name="summary_seekbar_long_press_flat_region">Works for the whole screen. Increase for larger long-press flat region, within which the app sends initial contact coordinates to server.</string>
+    <string name="suffix_seekbar_flat_region_pixels">pixels</string>
+
+    <string name="title_checkbox_enable_keyboard_toggle_in_native_touch">Enable keyboard toggle in multi-point touch mode </string>
+    <string name="summary_checkbox_enable_keyboard_toggle_in_native_touch">\t</string>
+    <string name="title_seekbar_keyboard_toggle_fingers_native_touch">Fingers to tap</string>
+    <string name="summary_seekbar_keyboard_toggle_fingers_native_touch">Least number of fingers to tap to toggle local on-screen keyboard in multi-point touch mode. \nIn trackpad mode, you always only need to tap 3 or more fingers to toggle local keyboard.</string>
+    <string name="suffix_seekbar_keyboard_toggle_fingers_native_touch"></string>
+
     <string name="title_checkbox_absolute_mouse_mode">Remote desktop mouse mode</string>
     <string name="summary_checkbox_absolute_mouse_mode">This can make mouse acceleration behave more naturally for remote desktop usage, but it is incompatible with many games.</string>
     <string name="title_checkbox_mouse_nav_buttons">Enable back and forward mouse buttons</string>
     <string name="summary_checkbox_mouse_nav_buttons">Enabling this option may break right clicking on some buggy devices</string>
+
+    <string name="category_enhanced_touch_settings">Enhanced Multi-Point Touch</string>
+    <string name="title_checkbox_enable_enhanced_touch">Enable enhanced touch</string>
+    <string name="summary_checkbox_enable_enhanced_touch">\t</string>
+    <string name="title_checkbox_enhanced_touch_on_which_side">Reverse enhanced touch zone</string>
+    <string name="summary_checkbox_enhanced_touch_on_which_side">Reverse enhanced touch zone to the left (default: on the right side of screen)</string>
+    <string name="title_enhanced_touch_zone_divider">Enhanced touch zone divider</string>
+    <string name="summary_enhanced_touch_zone_divider">Defines where to divide native-touch and enhanced-touch zones, less than 50% means divide from a point on the left, more than 50% means right</string>
+    <string name="dialog_title_enhanced_touch_zone_divider">Less than 50% means divide from a point on the left, more than 50% means right</string>
+    <string name="suffix_enhanced_touch_zone_divider">%</string>
+    <string name="title_pointer_velocity_factor">Pointer velocity factor</string>
+    <string name="summary_pointer_velocity_factor">Set pointer velocity factor for enhanced touch zone. Set 100% to disable</string>
+    <string name="dialog_title_pointer_velocity_factor">Set pointer velocity factor for enhanced touch zone. Set 100% to disable</string>
+    <string name="suffix_pointer_velocity_factor">%</string>
+    <string name="title_fixed_x_velocity">Set fixed X (horizontal) velocity</string>
+    <string name="summary_fixed_x_velocity">Set fixed X (horizontal) velocity. Set 0 to disable fixed x velocity mode. Larger than 0 means disable horizontal velocity factor to use fixed velocity instead.</string>
+    <string name="dialog_title_fixed_x_velocity">Set fixed X (horizontal) velocity in pixels. Set 0 to disable fixed x velocity.</string>
+    <string name="suffix_fixed_x_velocity">pixels</string>
 
     <string name="category_on_screen_controls_settings">On-screen Controls Settings</string>
     <string name="title_checkbox_show_onscreen_controls">Show on-screen controls</string>
