@@ -65,10 +65,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: root
-        path: app/build/outputs/apk/root/release/.apk
+        path: app/build/outputs/apk/root/release/*.apk
 
     - name: Upload nonRoot APK as artifact
       uses: actions/upload-artifact@v4
       with:
         name: root
-        path: app/build/outputs/apk/nonRoot/release/.apk
+        path: app/build/outputs/apk/nonRoot/release/*.apk
