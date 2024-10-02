@@ -80,7 +80,7 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file("app/joon.jks") // Use the name of the keystore file you are creating in the workflow
+            storeFile file("joon.jks") // Use the name of the keystore file you are creating in the workflow
             storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
             keyAlias System.getenv("ANDROID_KEY_ALIAS")
             keyPassword System.getenv("ANDROID_KEY_PASSWORD")
