@@ -44,9 +44,6 @@ jobs:
     - name: Clean project
       run: ./gradlew clean
 
-    - name: Decode and save keystore
-      run: echo "$ANDROID_KEYSTORE" | base64 --decode > /home/runner/work/moonlight-android/moonlight-android/app/joon.keystore
-
     - name: Build app using Gradle
       run: ./gradlew assembleRelease
       env:
