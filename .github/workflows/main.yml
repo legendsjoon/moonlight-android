@@ -57,7 +57,7 @@ jobs:
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v3
       with:
-	path: app/build/outputs/apk/**/*.apk
+        path: app/build/outputs/apk/**/*.apk  # Correct indentation here
 
     - name: Create a release
       id: create_release
