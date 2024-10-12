@@ -128,7 +128,7 @@ android {
             // TL;DR: Leave the following line alone!
             signingConfig signingConfigs.release
             applicationIdSuffix ".joon"
-            resValue "string", "app_label", "Moonlight"
+            resValue "string", "app_label", "Genshin Impact"
             resValue "string", "app_label_root", "Moonlight (Root)"
 
             minifyEnabled true
